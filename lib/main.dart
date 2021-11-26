@@ -1,145 +1,236 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/painting.dart';
 import 'package:provider/provider.dart';
-import 'spec.dart';
+import 'apistuff.dart';
 
 void main() {
-  var state = MyState();
-
-  runApp(
-    ChangeNotifierProvider(
-      create: (context) => state,
-      child: MyApp(),
-  ),
-  );
+  runApp(ChangeNotifierProvider(
+      create: (context) => ListanproviderState(), child: const MyApp()));
 }
 
-class MyApp extends StatefulWidget {
+class MyApp extends StatelessWidget {
+  const MyApp({Key? key}) : super(key: key);
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: MainView(),
-    );
-  }
-
-  @override
-  State<StatefulWidget> createState() {
-    // TODO: implement createState
-    throw UnimplementedError();
+        debugShowCheckedModeBanner: false,
+        title: 'Listan',
+        theme: ThemeData(
+          primarySwatch: Colors.purple,
+          visualDensity: VisualDensity.adaptivePlatformDensity,
+        ),
+        home: const HomePage());
   }
 }
 
-class MainView extends StatelessWidget {
+class HomePage extends StatelessWidget {
+  const HomePage({Key? key}) : super(key: key);
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: Text('LISTAN'),
-          centerTitle: true,
-          actions:[PopupMenuButton(
-           onSelected: (value) {
-                Provider.of<MyState>(context, listen: false).setFilterBy("ABABBAB");
-              },
-              itemBuilder: (context) => [
-                    PopupMenuItem(child: Text('alla'), value: 'alla'),
-                    PopupMenuItem(child: Text('klar'), value: 'klar'),
-                    PopupMenuItem(child: Text('oklar'), value: 'oklar'),
-                  ]),
-          ]),
-    
-        body:Column(
-          children: [Container(height: 20), item('skola', true)];
+          title: const Text('Listan'),
+          actions: [
+            PopupMenuButton(
+                onSelected: (value) {
+                  Provider.of<ListanproviderState>(context, listen: false)
+                      .setFilterBy(value!);
+                },
+                itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        child: Text('Alla'),
+                        value: 1,
+                      ),
+                      const PopupMenuItem(
+                        child: Text('Färdiga'),
+                        value: 2,
+                      ),
+                      const PopupMenuItem(
+                        child: Text('Ej färdig'),
+                        value: 3,
+                      )
+                    ])
+          ],
+        ),
+        body: Consumer<ListanproviderState>(
+            builder: (context, state, child) =>
+                Listan(_filterList(state.list, state.filterBy))),
+        floatingActionButton: FloatingActionButton(
+          child: const Icon(Icons.add, size: 40.0),
+          onPressed: () async {
+            var nyAkt = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => SecondView(ListSpec(title: ''))));
 
-        FloatingActionButton: FloatingActionButtonLocation.centerFloat(
-              child: Icon(Icons.add),
-                    onPressed: (Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => SecondView()))))
-                    );
-           ]);
-
+            if (nyAkt != null) {
+              Provider.of<ListanproviderState>(context, listen: false)
+                  .nyItem(nyAkt);
+            }
+          },
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat);
   }
 
-  Widget item(String aktivitet, bool check) {
-    return ListTile(
-        leading: Checkbox(value:check, onChanged:null),                      
-        title: Text(aktivitet, style: _textstyle(check)),
-        trailing: IconButton(
-            icon: Icon(Icons.delete),
-            onPressed: () {}          
-        ) 
-    );
-     
-    }     
+  List<ListSpec> _filterList(list, filterBy) {
+    if (filterBy == 2) {
+      return list.where((item) => item.done == true).toList();
+    } else if (filterBy == 3) {
+      return list.where((item) => item.done == false).toList();
+    }
+    return list;
+  }
 }
 
+class SecondView extends StatefulWidget {
+  final ListSpec item;
 
-  TextStyle _textstyle(check) {
-    if (check) {
-      return TextStyle(fontSize: 20, decoration: TextDecoration.lineThrough);
-    } else {
-      return TextStyle(fontSize: 20);
-    }
+  const SecondView(this.item, {Key? key}) : super(key: key);
+
+  @override
+  State<SecondView> createState() {
+    // ignore: no_logic_in_create_state
+    return _SecondViewState(item);
+  }
+}
+
+class _SecondViewState extends State<SecondView> {
+  late String title;
+  TextEditingController textEditingController = TextEditingController();
+
+  _SecondViewState(ListSpec item) {
+    title = item.title;
+    textEditingController = TextEditingController(text: item.title);
+
+    textEditingController.addListener(() {
+      setState(() {
+        title = textEditingController.text;
+      });
+    });
   }
 
-
-
-class SecondView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Ny aktivitet'),
-      ),
-      body: _list(context),
-    );
-  }
-
-  Widget _list(context) {
-    return ListView(
-      children: [
-        _item('Lägg till en ny aktivitet:'),
-        Container(
-          margin: EdgeInsets.only(left: 16, top: 30),
-          child: TextField(
-            decoration: InputDecoration(hintText: 'Ny aktivitet'),
-          ),
+        appBar: AppBar(
+          centerTitle: true,
+          title: const Text('Ny aktivitet'),
         ),
-        _knappar(context),
-      ],
-    );
+        body: Padding(
+          padding: const EdgeInsets.all(15.0),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(15.0),
+                child: TextField(
+                  controller: textEditingController,
+                  decoration: const InputDecoration(
+                    labelText: 'Ny aktivitet?',
+                  ),
+                ),
+              ),
+              ElevatedButton(
+                child: Text('Lägg till'),
+                style: ElevatedButton.styleFrom(),
+                onPressed: () {
+                  if (textEditingController.text.isEmpty) {
+                  } else {
+                    Navigator.pop(
+                        context,
+                        ListSpec(
+                          title: title,
+                        ));
+                  }
+                },
+              )
+            ],
+          ),
+        ));
+  }
+}
+
+class Listan extends StatefulWidget {
+  final List<ListSpec> list;
+
+  const Listan(this.list, {Key? key}) : super(key: key);
+
+  @override
+  State<Listan> createState() => _ListanState();
+}
+
+class _ListanState extends State<Listan> {
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+        children: widget.list.map((item) => _toDoItem(item, context)).toList());
   }
 
-  Widget _item(text) {
-    return Container(
-      margin: EdgeInsets.only(left: 16, top: 50),
-      child: Text(text, style: TextStyle(fontSize: 20)),
-    );
-  }
-
-  Widget _knappar(context) {
-    return Container(
-      margin: EdgeInsets.only(top: 50),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          OutlinedButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            child: Text('Avbryt'),
-          ),
-          Container(width: 30),
-          ElevatedButton(
-            onPressed: () {
-              onPressed:
-              () {
-                Navigator.pop(context);
-              };
-            },
-            child: Text('Spara'),
-          ),
-        ],
+  Widget _toDoItem(item, context) {
+    //hur en todo ser ut och visas
+    return ListTile(
+      leading: Checkbox(
+        value: item.done,
+        onChanged: (bool? value) {
+          setState(() {
+            item.done = value!;
+          });
+        },
+      ),
+      title: Text(item.title,
+          style: TextStyle(
+              decoration: item.done
+                  ? TextDecoration.lineThrough
+                  : TextDecoration.none)),
+      trailing: IconButton(
+        icon: const Icon(Icons.close),
+        onPressed: () {
+          Provider.of<ListanproviderState>(context, listen: false)
+              .removeItem(item);
+        },
       ),
     );
-  }}
+  }
+}
 
+class ListSpec {
+  //  spec for todo item grej
+  String title;
+  bool done;
+
+  ListSpec({required this.title, this.done = false});
+
+  static Map<String, dynamic> toJson(ListSpec item) {
+    return {'title': item.title, 'done': item.done};
+  }
+
+  static ListSpec fromJson(Map<String, dynamic> json) {
+    return ListSpec(title: json['title'], done: json['done']);
+  }
+}
+
+class ListanproviderState extends ChangeNotifier {
+  //Filtrera, ta bort och lägg till
+  List<ListSpec> _list = [];
+  Object _filterBy = 'Alla';
+
+  List<ListSpec> get list => _list;
+
+  Object get filterBy => _filterBy;
+
+  void nyItem(ListSpec item) async {
+    _list = await apiGrejer.nyItem(item);
+    //_list.add(item);          Gammal
+    notifyListeners();
+  }
+
+  void removeItem(ListSpec item) async {
+    _list = await apiGrejer.removeItem(item.title);
+    //_list.remove(item);         Gammal
+    notifyListeners();
+  }
+
+  void setFilterBy(Object filterBy) {
+    _filterBy = filterBy;
+    notifyListeners();
+  }
+}

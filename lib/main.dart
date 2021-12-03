@@ -1,115 +1,236 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'apistuff.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(ChangeNotifierProvider(
+      create: (context) => ListanproviderState(), child: const MyApp()));
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
-
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
-        primarySwatch: Colors.blue,
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
+        debugShowCheckedModeBanner: false,
+        title: 'Listan',
+        theme: ThemeData(
+          primarySwatch: Colors.purple,
+          visualDensity: VisualDensity.adaptivePlatformDensity,
+        ),
+        home: const HomePage());
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key, required this.title}) : super(key: key);
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class HomePage extends StatelessWidget {
+  const HomePage({Key? key}) : super(key: key);
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(
+          title: const Text('Listan'),
+          actions: [
+            PopupMenuButton(
+                onSelected: (value) {
+                  Provider.of<ListanproviderState>(context, listen: false)
+                      .setFilterBy(value!);
+                },
+                itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        child: Text('Alla'),
+                        value: 1,
+                      ),
+                      const PopupMenuItem(
+                        child: Text('Färdiga'),
+                        value: 2,
+                      ),
+                      const PopupMenuItem(
+                        child: Text('Ej färdig'),
+                        value: 3,
+                      )
+                    ])
+          ],
+        ),
+        body: Consumer<ListanproviderState>(
+            builder: (context, state, child) =>
+                Listan(_filterList(state.list, state.filterBy))),
+        floatingActionButton: FloatingActionButton(
+          child: const Icon(Icons.add, size: 40.0),
+          onPressed: () async {
+            var nyAkt = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => SecondView(ListSpec(title: ''))));
+
+            if (nyAkt != null) {
+              Provider.of<ListanproviderState>(context, listen: false)
+                  .nyItem(nyAkt);
+            }
+          },
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat);
+  }
+
+  List<ListSpec> _filterList(list, filterBy) {
+    if (filterBy == 2) {
+      return list.where((item) => item.done == true).toList();
+    } else if (filterBy == 3) {
+      return list.where((item) => item.done == false).toList();
+    }
+    return list;
+  }
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class SecondView extends StatefulWidget {
+  final ListSpec item;
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+  const SecondView(this.item, {Key? key}) : super(key: key);
+
+  @override
+  State<SecondView> createState() {
+    // ignore: no_logic_in_create_state
+    return _SecondViewState(item);
+  }
+}
+
+class _SecondViewState extends State<SecondView> {
+  late String title;
+  TextEditingController textEditingController = TextEditingController();
+
+  _SecondViewState(ListSpec item) {
+    title = item.title;
+    textEditingController = TextEditingController(text: item.title);
+
+    textEditingController.addListener(() {
+      setState(() {
+        title = textEditingController.text;
+      });
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
-      appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug painting" (press "p" in the console, choose the
-          // "Toggle Debug Paint" action from the Flutter Inspector in Android
-          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-          // to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
-            ),
-          ],
+        appBar: AppBar(
+          centerTitle: true,
+          title: const Text('Ny aktivitet'),
         ),
+        body: Padding(
+          padding: const EdgeInsets.all(15.0),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(15.0),
+                child: TextField(
+                  controller: textEditingController,
+                  decoration: const InputDecoration(
+                    labelText: 'Ny aktivitet?',
+                  ),
+                ),
+              ),
+              ElevatedButton(
+                child: Text('Lägg till'),
+                style: ElevatedButton.styleFrom(),
+                onPressed: () {
+                  if (textEditingController.text.isEmpty) {
+                  } else {
+                    Navigator.pop(
+                        context,
+                        ListSpec(
+                          title: title,
+                        ));
+                  }
+                },
+              )
+            ],
+          ),
+        ));
+  }
+}
+
+class Listan extends StatefulWidget {
+  final List<ListSpec> list;
+
+  const Listan(this.list, {Key? key}) : super(key: key);
+
+  @override
+  State<Listan> createState() => _ListanState();
+}
+
+class _ListanState extends State<Listan> {
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+        children: widget.list.map((item) => _toDoItem(item, context)).toList());
+  }
+
+  Widget _toDoItem(item, context) {
+    //hur en todo ser ut och visas
+    return ListTile(
+      leading: Checkbox(
+        value: item.done,
+        onChanged: (bool? value) {
+          setState(() {
+            item.done = value!;
+          });
+        },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      title: Text(item.title,
+          style: TextStyle(
+              decoration: item.done
+                  ? TextDecoration.lineThrough
+                  : TextDecoration.none)),
+      trailing: IconButton(
+        icon: const Icon(Icons.close),
+        onPressed: () {
+          Provider.of<ListanproviderState>(context, listen: false)
+              .removeItem(item);
+        },
+      ),
     );
+  }
+}
+
+class ListSpec {
+  //  spec for todo item grej
+  String title;
+  bool done;
+
+  ListSpec({required this.title, this.done = false});
+
+  static Map<String, dynamic> toJson(ListSpec item) {
+    return {'title': item.title, 'done': item.done};
+  }
+
+  static ListSpec fromJson(Map<String, dynamic> json) {
+    return ListSpec(title: json['title'], done: json['done']);
+  }
+}
+
+class ListanproviderState extends ChangeNotifier {
+  //Filtrera, ta bort och lägg till
+  List<ListSpec> _list = [];
+  Object _filterBy = 'Alla';
+
+  List<ListSpec> get list => _list;
+
+  Object get filterBy => _filterBy;
+
+  void nyItem(ListSpec item) async {
+    _list = await apiGrejer.nyItem(item);
+    //_list.add(item);          Gammal
+    notifyListeners();
+  }
+
+  void removeItem(ListSpec item) async {
+    _list = await apiGrejer.removeItem(item.title);
+    //_list.remove(item);         Gammal
+    notifyListeners();
+  }
+
+  void setFilterBy(Object filterBy) {
+    _filterBy = filterBy;
+    notifyListeners();
   }
 }

@@ -89,7 +89,7 @@ class SecondView extends StatefulWidget {
 
   @override
   State<SecondView> createState() {
-    // ignore: no_logic_in_create_state
+  
     return _SecondViewState(item);
   }
 }
@@ -166,7 +166,7 @@ class _ListanState extends State<Listan> {
   }
 
   Widget _toDoItem(item, context) {
-    //hur en todo ser ut och visas
+   
     return ListTile(
       leading: Checkbox(
         value: item.done,
@@ -193,7 +193,6 @@ class _ListanState extends State<Listan> {
 }
 
 class ListSpec {
-  //  spec for todo item grej
   String title;
   bool done;
 
@@ -209,7 +208,6 @@ class ListSpec {
 }
 
 class ListanproviderState extends ChangeNotifier {
-  //Filtrera, ta bort och lägg till
   List<ListSpec> _list = [];
   Object _filterBy = 'Alla';
 

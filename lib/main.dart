@@ -5,8 +5,8 @@ import 'apistuff.dart';
 void main() {
   var state = ListanproviderState();
   state.visaLista();
-  runApp(ChangeNotifierProvider(
-      create: (context) => ListanproviderState(), child: const MyApp()));
+  runApp(
+      ChangeNotifierProvider(create: (context) => state, child: const MyApp()));
 }
 
 class MyApp extends StatelessWidget {
